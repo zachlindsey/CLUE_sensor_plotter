@@ -146,18 +146,93 @@ class Plotter:
 		self._output.show(self._test_content)
 
 	def _create_test_content(self):
-		text = Label(
+		text_string = "Here is a single Palette+Bitmap\nplaced on a 2x3 TileGrid"
+		text1 = Label(
 			self._font,
-			x = 50,
-			y = 20,
-			text = "TEST",
-			max_glyphs = 4,
-			scale = 4,
+			x = 5,
+			y = 5,
+			text = text_string,
+			max_glyphs = len(text_string),
+			scale = 1,
 			line_spacing = 1,
 			color = self.LABEL_COLOR
 		)
 
+		text_string = "The bitmap:"
+		text2 = Label(
+			self._font,
+			x = 5,
+			y = 40,
+			text = text_string,
+			max_glyphs = len(text_string),
+			scale = 1,
+			line_spacing = 1,
+			color = self.LABEL_COLOR
+		)
 
-		content = displayio.Group(max_size = 1)
-		content.append(text)
+		text_string = "The tiled bitmap:"
+		text3 = Label(
+			self._font,
+			x = 5,
+			y = 80,
+			text = text_string,
+			max_glyphs = len(text_string),
+			scale = 1,
+			line_spacing = 1,
+			color = self.LABEL_COLOR
+		)
+
+		# to draw something other than text, first make
+		# a palette object to store the colors
+		palette = displayio.Palette(color_count = 4)
+
+		palette[0] = 0xFF0000
+		palette[1] = 0x00FF00
+		palette[2] = 0x0000FF
+		palette[3] = 0x000000
+
+		# then, create a bitmap object
+		bitmap = displayio.Bitmap(30, 30, 4)
+		
+		# we can fill up the bitmap.
+		# the values are just integers, which correspond
+		# to the indices in the palette we just set up
+		for x in range(25):
+			for y in range(25):
+				bitmap[x,y] = x//10
+			for y in range(25,30):
+				bitmap[x,y] = 3
+		for x in range(25,30):
+			for y in range(30):
+				bitmap[x,y] = 3
+
+
+		# now, we need to place it in a TileGrid object...
+		tilegrid1 = displayio.TileGrid(
+			bitmap,
+			pixel_shader = palette,
+			width = 2,
+			height = 3,
+			x = 20,
+			y = 100
+		)
+
+		tilegrid2 = displayio.TileGrid(
+			bitmap,
+			pixel_shader = palette,
+			x = 80,
+			y = 40
+		)
+
+
+
+		# and, finally... we place this on a group
+
+
+		content = displayio.Group(max_size = 5)
+		content.append(text1)
+		content.append(text2)
+		content.append(text3)
+		content.append(tilegrid1)
+		content.append(tilegrid2)
 		return content

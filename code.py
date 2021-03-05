@@ -7,6 +7,9 @@ from adafruit_clue import clue
 
 initial_title = "Welcome to\nCLUE Plotter"
 
+
+
+
 plotter = Plotter(board.DISPLAY, title=initial_title)
 
 plotter.display_on()
@@ -25,13 +28,13 @@ while True:
 			
 
 	if state == 0:
-			plotter.update_content(
-				temp = clue.temperature, 
-				pressure = clue.pressure,
-				prox = clue.proximity,
-				humid = clue.humidity,
-				color = clue.color
-			)
+		plotter.update_content(
+			temp = clue.temperature, 
+			pressure = clue.pressure,
+			prox = clue.proximity,
+			humid = clue.humidity,
+			color = clue.color
+		)
 	elif state == 1:
 		plotter.test()
 
