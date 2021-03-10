@@ -37,7 +37,7 @@ class Plotter:
 		self.redraw_test = True
 
 
-	def draw_graph(self, data, data_pointer):
+	def draw_graph(self, name, data, data_pointer):
 		# for now, let's just make a sample temperature
 		# plot... later, we'll add more features
 
@@ -45,7 +45,7 @@ class Plotter:
 			self._font,
 			x = 5,
 			y = 10,
-			text = f'TEMPERATURE\nCurrent: {round(data[-1],2)}',
+			text = f'{name.upper()}\nCurrent: {round(data[data_pointer-1],2)}',
 			max_glyphs = 36,
 			scale = 2,
 			line_spacing = 1,

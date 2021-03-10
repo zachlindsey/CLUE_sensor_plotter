@@ -18,9 +18,39 @@ plotter = Plotter(board.DISPLAY, title=initial_title)
 plotter.display_on()
 state = 0
 num_screens = 3
-data = []
-data_pointer = 0
+
+class Source:
+    def __init__(self,
+        name,
+        clue_reading
+    ):
+        self.name = name
+        self.data = []
+        self.data_pointer = 0
+        self.clue_reading = clue_reading
+
+    def update(self):
+        graph_window_size = 200
+        if len(self.data) < graph_window_size:
+            self.data.append(self.clue_reading())
+        else:
+            self.data[self.data_pointer] = self.clue_reading()
+
+        self.data_pointer += 1
+        self.data_pointer %= graph_window_size
+
+
+sources = [
+    Source("temperature", lambda: clue.temperature),
+    Source("pressure", lambda : clue.pressure)
+]
+
+
 while True:
+
+    for source in sources:
+        source.update()
+
     if clue.button_a:
         state -= 1
         state %= num_screens
@@ -31,7 +61,7 @@ while True:
         state %= num_screens
         time.sleep(0.1)
             
-    if state == 2:
+    if state == 3:
         plotter.update_content(
           temp = clue.temperature, 
           pressure = clue.pressure,
@@ -39,18 +69,14 @@ while True:
           humid = clue.humidity,
           color = clue.color
         )
-    elif state == 1:
+    elif state == 2:
         plotter.test()
-    elif state == 0:
-        if len(data) < 200:
-            data.append(clue.temperature)
-        else:
-            data[data_pointer] = clue.temperature
+    else:
+        data = sources[state].data
+        data_pointer = sources[state].data_pointer
+        name = sources[state].name
 
-        data_pointer += 1
-        data_pointer %= 200
-
-        plotter.draw_graph(data, data_pointer)
+        plotter.draw_graph(name, data, data_pointer)
     
 
 
