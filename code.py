@@ -45,7 +45,7 @@ sources = [
     Source("pressure", lambda : clue.pressure)
 ]
 
-
+last_source = ''
 while True:
 
     for source in sources:
@@ -54,11 +54,13 @@ while True:
     if clue.button_a:
         state -= 1
         state %= num_screens
+        changed = True
         time.sleep(0.1)
 
     elif clue.button_b:
         state += 1
         state %= num_screens
+        changed = True
         time.sleep(0.1)
             
     if state == 3:
@@ -75,6 +77,10 @@ while True:
         data = sources[state].data
         data_pointer = sources[state].data_pointer
         name = sources[state].name
+
+        if name != last_source:
+            last_source = name
+            plotter.init_graph(name)
 
         plotter.draw_graph(name, data, data_pointer)
     

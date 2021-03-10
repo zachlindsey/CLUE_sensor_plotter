@@ -36,22 +36,62 @@ class Plotter:
 
 		self.redraw_test = True
 
+		self.test_text = 'a'
 
-	def draw_graph(self, name, data, data_pointer):
-		# for now, let's just make a sample temperature
-		# plot... later, we'll add more features
-
-		title = Label(
+	def init_graph(self, name):
+		self.title = Label(
 			self._font,
 			x = 5,
 			y = 10,
-			text = f'{name.upper()}\nCurrent: {round(data[data_pointer-1],2)}',
+			text = f'{name.upper()}\nCurrent: none',
 			max_glyphs = 36,
 			scale = 2,
 			line_spacing = 1,
 			color = self.LABEL_COLOR
 		)
 
+		self.palette = displayio.Palette(color_count = 2)
+		self.palette[0] = 0x000000
+		self.palette[1] = 0xFF0000
+
+		graph_width = 200
+		self.graph_bitmap = displayio.Bitmap(graph_width, 120, 2)
+
+		self.graph_tg = displayio.TileGrid(
+			self.graph_bitmap,
+			pixel_shader = self.palette,
+			x = 240-graph_width,
+			y = 120
+		)
+
+		self.num_ticks = 5
+		self.y_axis_labels = displayio.Group(max_size = self.num_ticks)
+		for i in range(self.num_ticks):
+			self.y_axis_labels.append(
+				Label(
+						self._font,
+						x = 0,
+						y = 120+i,
+						text = '--',
+						max_glyphs = 10,
+						scale = 1,
+						color = 0xFFFFFF
+			))
+
+		self.content = displayio.Group(max_size = 4)
+		self.content.append(self.title)
+		self.content.append(self.graph_tg)
+		# content.append(y_axis_tg)
+		self.content.append(self.y_axis_labels)
+
+
+
+
+	def draw_graph(self, name, data, data_pointer):
+		# for now, let's just make a sample temperature
+		# plot... later, we'll add more features
+		self.title.text = f'{name.upper()}\nCurrent: {round(data[data_pointer-1],2)}'
+		
 
 		y_min = min(data)
 		y_max = max(data)
@@ -59,45 +99,26 @@ class Plotter:
 		y_min = y_min - auto_scale_y
 		y_max = y_max + auto_scale_y
 
-		palette = displayio.Palette(color_count = 2)
-		palette[0] = 0x000000
-		palette[1] = 0xFF0000
 
-		graph_width = 200
-		graph_bitmap = displayio.Bitmap(graph_width, 120, 2)
 
 		x_offset = 0
 		for x, y_meas in enumerate(data[data_pointer:]):
 			y = int(120*(1 - (y_meas - y_min)/(y_max - y_min)))
 			print(x, y)
-			graph_bitmap[x,y] = 1
+			self.graph_bitmap[x,y] = 1
 			x_offset += 1
 		for x, y_meas in enumerate(data[:data_pointer]):
 			y = int(120*(1 - (y_meas - y_min)/(y_max - y_min)))
 			print(x_offset + x, y)
-			graph_bitmap[x_offset + x,y] = 1
-
-		graph_tg = displayio.TileGrid(
-			graph_bitmap,
-			pixel_shader = palette,
-			x = 240-graph_width,
-			y = 120
-		)
+			self.graph_bitmap[x_offset + x,y] = 1
 
 
-		# y_axis_bitmap = displayio.Bitmap(5, 120, 1)
-		# y_axis_palette = displayio.Palette(color_count = 1)
-		# y_axis_palette[0] = 0xFFFFFF
-
-		num_ticks = 5
-		y_axis_labels = displayio.Group(max_size = num_ticks)
-
-		for tick_num in range(num_ticks):
-			y_true = y_min + tick_num*(y_max - y_min)/float(num_ticks)
+		for tick_num in range(self.num_ticks):
+			y_true = y_min + tick_num*(y_max - y_min)/float(self.num_ticks)
 			y_screen = int(120*(1 - (y_true - y_min)/(y_max - y_min)))
 			# for x in range(5):
 			# 	y_axis_bitmap[x,y_screen] = 0
-			y_axis_labels.append(Label(
+			self.y_axis_labels[tick_num] = Label(
 				self._font,
 				x = 0,
 				y = 120+y_screen,
@@ -107,8 +128,6 @@ class Plotter:
 				color = 0xFFFFFF
 		)
 
-)
-
 
 		# y_axis_tg = displayio.TileGrid(
 		# 	y_axis_bitmap,
@@ -117,12 +136,8 @@ class Plotter:
 		# 	y = 120
 		# )
 
-		content = displayio.Group(max_size = 4)
-		content.append(title)
-		content.append(graph_tg)
-		# content.append(y_axis_tg)
-		content.append(y_axis_labels)
-		self._output.show(content)
+		
+		self._output.show(self.content)
 
 
 
