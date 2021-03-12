@@ -1,26 +1,22 @@
 import board
 import time
 
-
 import gc
 
 from plotter import Plotter
 
 from adafruit_clue import clue
 
+from adafruit_display_text.label import Label
+import terminalio
+import time
+import displayio
+
 initial_title = "Welcome to\nCLUE Plotter"
 
+plotter = Plotter(board.DISPLAY)
 
-
-
-plotter = Plotter(board.DISPLAY, title=initial_title)
-
-
-
-
-plotter.display_on()
 state = 0
-num_screens = 3
 
 class Source:
     def __init__(self,
@@ -45,11 +41,15 @@ class Source:
 
 sources = [
     Source("temperature", lambda: clue.temperature),
-    Source("pressure", lambda : clue.pressure)
+    Source("pressure", lambda : clue.pressure),
+    Source("touch_0", lambda: clue.touch_0)
 ]
+num_screens = len(sources)
 
 last_source = ''
 while True:
+    gc.collect() 
+    print(gc.mem_free())
 
     for source in sources:
         source.update()
@@ -66,27 +66,12 @@ while True:
         changed = True
         time.sleep(0.1)
             
-    if state == 3:
-        plotter.update_content(
-          temp = clue.temperature, 
-          pressure = clue.pressure,
-          prox = clue.proximity,
-          humid = clue.humidity,
-          color = clue.color
-        )
-    elif state == 2:
-        plotter.test()
-    else:
-        data = sources[state].data
-        data_pointer = sources[state].data_pointer
-        name = sources[state].name
+    data = sources[state].data
+    data_pointer = sources[state].data_pointer
+    name = sources[state].name
 
-        if name != last_source:
-            last_source = name
-            plotter.init_graph(name, "None")
+    plotter.draw_graph(name, data, data_pointer)
 
-        plotter.draw_graph(name, data, data_pointer)
-    
 
 
 
