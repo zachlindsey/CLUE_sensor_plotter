@@ -1,6 +1,9 @@
 import board
 import time
 
+
+import gc
+
 from plotter import Plotter
 
 from adafruit_clue import clue
@@ -80,7 +83,7 @@ while True:
 
         if name != last_source:
             last_source = name
-            plotter.init_graph(name)
+            plotter.init_graph(name, "None")
 
         plotter.draw_graph(name, data, data_pointer)
     

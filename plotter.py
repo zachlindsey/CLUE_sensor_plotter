@@ -3,11 +3,16 @@ import terminalio
 import time
 import displayio
 
+import gc
+
 def RGB_hex(R,G,B):
 	R = min(R, 255)
 	G = min(G, 255)
 	B = min(B, 255)
 	return int('{:02x}{:02x}{:02x}'.format(R,G,B), 16)
+
+def out_of_bounds(y_min, y_max, new_y):
+		return (new_y > y_max*0.9) or (new_y < y_min/0.9)
 
 class Plotter:
 	TEMP_SLOT = 1
@@ -19,7 +24,9 @@ class Plotter:
 
 	LABEL_COLOR = 0xc0c0c0
 	def __init__(self, output, title="",
-		screen_width=240, screen_height=240):
+		screen_width=240, 
+		screen_height=240
+		):
 		self._output = output
 		self._title = title
 		self._max_title_len = 40
@@ -37,14 +44,19 @@ class Plotter:
 		self.redraw_test = True
 
 		self.test_text = 'a'
+		self.y_min = None
+		self.y_max = None
 
-	def init_graph(self, name):
+	def init_graph(self, name, cur_val, y_min=0, y_max=1):
+		gc.collect() 
+		if cur_val is None or cur_val == 'None':
+			cur_val = 0
 		self.title = Label(
 			self._font,
 			x = 5,
 			y = 10,
-			text = f'{name.upper()}\nCurrent: none',
-			max_glyphs = 36,
+			text = f'{name.upper()}\nCurrent: {round(cur_val,2)}\nFree Mem: {gc.mem_free()}',
+			max_glyphs = 64,
 			scale = 2,
 			line_spacing = 1,
 			color = self.LABEL_COLOR
@@ -64,19 +76,32 @@ class Plotter:
 			y = 120
 		)
 
+		if y_max == y_min:
+			auto_scale_y = y_max / 10
+		else:
+			auto_scale_y = min((y_max-y_min)/10, 0.1)
+		y_min = y_min - auto_scale_y
+		y_max = y_max + auto_scale_y
+
+
+
 		self.num_ticks = 5
 		self.y_axis_labels = displayio.Group(max_size = self.num_ticks)
-		for i in range(self.num_ticks):
-			self.y_axis_labels.append(
-				Label(
-						self._font,
-						x = 0,
-						y = 120+i,
-						text = '--',
-						max_glyphs = 10,
-						scale = 1,
-						color = 0xFFFFFF
-			))
+		for tick_num in range(self.num_ticks):
+			y_true = y_min + tick_num*(y_max - y_min)/float(self.num_ticks)
+			y_screen = int(120*(1 - (y_true - y_min)/(y_max - y_min)))
+			# for x in range(5):
+			# 	y_axis_bitmap[x,y_screen] = 0
+	
+			self.y_axis_labels.append(Label(
+				self._font,
+				x = 0,
+				y = 120+y_screen,
+				text = f'{round(y_true,2)}',
+				max_glyphs = 10,
+				scale = 1,
+				color = 0xFFFFFF
+		))
 
 		self.content = displayio.Group(max_size = 4)
 		self.content.append(self.title)
@@ -85,37 +110,53 @@ class Plotter:
 		self.content.append(self.y_axis_labels)
 
 
-
-
 	def draw_graph(self, name, data, data_pointer):
 		# for now, let's just make a sample temperature
 		# plot... later, we'll add more features
-		self.title.text = f'{name.upper()}\nCurrent: {round(data[data_pointer-1],2)}'
+		gc.collect()  # must collect() first to measure free memory
+		self.title.text = f'{name.upper()}\nCurrent: {round(data[data_pointer-1],2)}\nFree Mem: {gc.mem_free()}'
 		
 
-		y_min = min(data)
-		y_max = max(data)
-		auto_scale_y = max((max(data)-min(data))/10, 0.1)
-		y_min = y_min - auto_scale_y
-		y_max = y_max + auto_scale_y
+		if self.y_min == None or out_of_bounds(self.y_min, self.y_max, data[data_pointer-1]):
+			self.y_min = min(data)
+			self.y_max = max(data)
+			self.init_graph(
+				name, 
+				data[data_pointer-1],
+				y_min = self.y_min, 
+				y_max = self.y_max
+			)
 
-
+		y_max = self.y_max
+		y_min = self.y_min
+		if y_max == y_min:
+			delta_y = 1
+			y_window_max = y_max + 1
+			y_window_min = y_max - 1
+			delta_y_window = 1.2*delta_y 
+		else:
+			delta_y = y_max - y_min
+			y_window_max = y_max + 0.1*delta_y
+			y_window_min = y_min - 0.1*delta_y
+			delta_y_window = 1.2*delta_y
+			
+			
 
 		x_offset = 0
 		for x, y_meas in enumerate(data[data_pointer:]):
-			y = int(120*(1 - (y_meas - y_min)/(y_max - y_min)))
+			y = int(119*(1 - (y_meas - y_window_min)/delta_y_window))
 			print(x, y)
 			self.graph_bitmap[x,y] = 1
 			x_offset += 1
 		for x, y_meas in enumerate(data[:data_pointer]):
-			y = int(120*(1 - (y_meas - y_min)/(y_max - y_min)))
+			y = int(119*(1 - (y_meas - y_window_min)/delta_y_window))
 			print(x_offset + x, y)
 			self.graph_bitmap[x_offset + x,y] = 1
 
 
 		for tick_num in range(self.num_ticks):
 			y_true = y_min + tick_num*(y_max - y_min)/float(self.num_ticks)
-			y_screen = int(120*(1 - (y_true - y_min)/(y_max - y_min)))
+			y_screen = int(119*(1 - (y_true - y_min)/delta_y))
 			# for x in range(5):
 			# 	y_axis_bitmap[x,y_screen] = 0
 			self.y_axis_labels[tick_num] = Label(
@@ -128,13 +169,6 @@ class Plotter:
 				color = 0xFFFFFF
 		)
 
-
-		# y_axis_tg = displayio.TileGrid(
-		# 	y_axis_bitmap,
-		# 	pixel_shader = y_axis_palette,
-		# 	x = 0,
-		# 	y = 120
-		# )
 
 		
 		self._output.show(self.content)
