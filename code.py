@@ -42,6 +42,7 @@ class Source:
 sources = [
     Source("temperature", lambda: clue.temperature),
     Source("pressure", lambda : clue.pressure),
+    Source("humidity", lambda: clue.humidity),
     Source("touch_0", lambda: clue.touch_0)
 ]
 num_screens = len(sources)
