@@ -98,8 +98,12 @@ class Plotter:
 	def redraw_y_axis(self, cur_val):
 		if max(cur_val) > self.y_max:
 			self.y_max = max(cur_val)
+			self.y_max += 0.05*(self.y_max - self.y_min)
 		if min(cur_val) < self.y_min:
 			self.y_min = min(cur_val)
+			self.y_min -= 0.05*(self.y_max - self.y_min)
+
+
 
 		for tick_num in range(self.num_ticks):
 			y = self.y_min + tick_num * (self.y_max - self.y_min)/(self.num_ticks-1)
