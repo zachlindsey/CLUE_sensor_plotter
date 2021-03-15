@@ -11,8 +11,13 @@ def RGB_hex(R,G,B):
 	B = min(B, 255)
 	return int('{:02x}{:02x}{:02x}'.format(R,G,B), 16)
 
-def out_of_bounds(y_min, y_max, new_y):
-		return (new_y > y_max) or (new_y < y_min)
+def out_of_bounds(y_min, y_max, min_data, max_data):
+		delta = max_data - min_data
+		if y_max < max_data or y_min > min_data:
+			return True
+		if max_data < y_max - 0.1*delta or min_data > y_min+0.1*delta:
+			return True
+		return False
 
 class Plotter:
 	LABEL_COLOR = 0xc0c0c0
@@ -38,19 +43,21 @@ class Plotter:
 			x = 5,
 			y = 10,
 			text = f'No source!\nCurrent: {round(cur_val,2)}\nFree Mem: {gc.mem_free()}',
-			max_glyphs = 64,
+			max_glyphs = 80,
 			scale = 2,
 			line_spacing = 1,
 			color = self.LABEL_COLOR
 		)
 
 		# create graph
-		self.palette = displayio.Palette(color_count = 2)
+		self.palette = displayio.Palette(color_count = 4)
 		self.palette[0] = 0x000000
 		self.palette[1] = 0xFF0000
+		self.palette[2] = 0x00FF00
+		self.palette[3] = 0X0000FF
 
 		graph_width = 200
-		self.graph_bitmap = displayio.Bitmap(graph_width, 120, 2)
+		self.graph_bitmap = displayio.Bitmap(graph_width, 120, 4)
 
 		self.graph_tg = displayio.TileGrid(
 			self.graph_bitmap,
@@ -89,10 +96,10 @@ class Plotter:
 		self.content.append(self.y_axis_labels)
 
 	def redraw_y_axis(self, cur_val):
-		if cur_val > self.y_max:
-			self.y_max = cur_val
-		if cur_val < self.y_min:
-			self.y_min = cur_val
+		if max(cur_val) > self.y_max:
+			self.y_max = max(cur_val)
+		if min(cur_val) < self.y_min:
+			self.y_min = min(cur_val)
 
 		for tick_num in range(self.num_ticks):
 			y = self.y_min + tick_num * (self.y_max - self.y_min)/(self.num_ticks-1)
@@ -104,14 +111,16 @@ class Plotter:
 	def replot(self, source_data, data_pointer, y_min, y_max):
 		self.graph_bitmap.fill(0)
 		x_offset = 0
-		for x, y_meas in enumerate(source_data[data_pointer:]):
-			y = int(119*(1 - (y_meas - y_min)/(y_max - y_min)))
-			self.graph_bitmap[x,y] = 1
-			x_offset += 1
-		for x, y_meas in enumerate(source_data[:data_pointer]):
-			y = int(119*(1 - (y_meas - y_min)/(y_max - y_min)))
-			
-			self.graph_bitmap[x_offset + x,y] = 1
+		for x, y_meas_vect in enumerate(source_data[data_pointer:]):
+			for i, y_meas in enumerate(y_meas_vect):
+				y = int(119*(1 - (y_meas - y_min)/(y_max - y_min)))
+				self.graph_bitmap[x,y] = i+1
+				x_offset += 1
+		for x, y_meas_vect in enumerate(source_data[:data_pointer]):
+			for i, y_meas in enumerate(y_meas_vect):
+				y = int(119*(1 - (y_meas - y_min)/(y_max - y_min)))
+				
+				self.graph_bitmap[x_offset + x,y] = i+1
 
 		
 
@@ -122,24 +131,37 @@ class Plotter:
 	def draw_graph(self, source_name, source_data, data_pointer):
 		gc.collect()
 		cur_val = source_data[data_pointer-1]
-		self.title.text = f'{source_name}\nCurrent: {round(cur_val,2)}\nFree Mem: {gc.mem_free()}'
+
+		if len(cur_val) == 1:
+			self.title.text = f'{source_name}\nCurrent: {round(cur_val[0],2)}\nFree Mem: {gc.mem_free()}'
+		else:
+			self.title.text = f'{source_name}'+'\n'.join(
+				[f'Current{i}: {round(cur_val[i],2)}' for i in range(len(cur_val))]
+			) + f'\nFree Mem: {gc.mem_free()}'
 
 		if source_name != self.cur_source:
 			self.cur_source = source_name
-			self.y_min = min(source_data)
-			self.y_max = max(source_data)
+	
+			self.y_min = min(map(min, source_data))
+			self.y_max = max(map(max, source_data))
+
 			if self.y_min == self.y_max:
-				self.y_min = 0
-				self.y_max = 1
+				self.y_min -= 0.00001
+				self.y_max += 0.00001
 			self.redraw_y_axis(cur_val)
 			self.replot(source_data, data_pointer, self.y_min, self.y_max)
-		elif out_of_bounds(self.y_min, self.y_max, cur_val):
+		elif out_of_bounds(self.y_min, self.y_max, min(map(min, source_data)), max(map(max, source_data))):
 			self.redraw_y_axis(cur_val)
 			self.replot(source_data, data_pointer, self.y_min, self.y_max)
-		new_y = source_data[data_pointer-1]
-		x = data_pointer
-		y = int(119*(1 - (new_y - self.y_min)/(self.y_max - self.y_min)))
-		self.graph_bitmap[x,y] = 1
+		else:
+			new_y_vect = source_data[data_pointer-1]
+			x = data_pointer
+			for j in range(120):
+				self.graph_bitmap[x,j] = 0
+			for i, new_y in enumerate(new_y_vect):
+				y = int(119*(1 - (new_y - self.y_min)/(self.y_max - self.y_min)))
+
+				self.graph_bitmap[x,y] = i+1
 		self._output.show(self.content)
 
 

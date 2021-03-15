@@ -21,29 +21,38 @@ state = 0
 class Source:
     def __init__(self,
         name,
-        clue_reading
+        clue_reading,
+        is_scalar
     ):
         self.name = name
         self.data = []
         self.data_pointer = 0
         self.clue_reading = clue_reading
+        self.is_scalar = is_scalar
 
     def update(self):
         graph_window_size = 200
         if len(self.data) < graph_window_size:
-            self.data.append(self.clue_reading())
+            if self.is_scalar:
+                self.data.append([self.clue_reading()])
+            else:
+                self.data.append(self.clue_reading())
         else:
-            self.data[self.data_pointer] = self.clue_reading()
+            if self.is_scalar:
+                self.data[self.data_pointer] = [self.clue_reading()]
+            else:
+                self.data[self.data_pointer] = self.clue_reading()
 
         self.data_pointer += 1
         self.data_pointer %= graph_window_size
 
 
 sources = [
-    Source("temperature", lambda: clue.temperature),
-    Source("pressure", lambda : clue.pressure),
-    Source("humidity", lambda: clue.humidity),
-    Source("touch_0", lambda: clue.touch_0)
+    Source("temperature", lambda: clue.temperature, True),
+    Source("pressure", lambda : clue.pressure, True),
+    Source("accel", lambda: clue.acceleration, False),
+    Source("humidity", lambda: clue.humidity, True),
+    Source("touch_0", lambda: clue.touch_0, True)
 ]
 num_screens = len(sources)
 
