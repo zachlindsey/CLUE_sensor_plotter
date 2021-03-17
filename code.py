@@ -59,7 +59,7 @@ sources = [
 num_screens = len(sources)
 
 while True:
-    center_game.draw()
+    center_game.draw(clue.acceleration)
 
 last_source = ''
 while True:

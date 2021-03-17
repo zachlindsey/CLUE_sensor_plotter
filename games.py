@@ -54,7 +54,7 @@ class CenterGame:
 		self.inner_circle_palette[1] = 0x000000
 		self.inner_circle_palette.make_transparent(0)
 
-		self.circle_gp = displayio.Group(max_size = 3)
+		self.circle_gp = displayio.Group(max_size = 4)
 
 		for r in [120, 80, 40]:
 			self.circle_gp.append(
@@ -66,7 +66,36 @@ class CenterGame:
 					self.inner_circle_palette)
 			)
 
+		self.main_circle_palette = displayio.Palette(color_count = 2)
+		self.main_circle_palette[0] = 0x000000
+		self.main_circle_palette[1] = 0xffffff
+		self.main_circle_palette.make_transparent(0)
+
+		self.main_inner_circle_palette = displayio.Palette(color_count = 2)
+		self.main_inner_circle_palette[0] = 0x000000
+		self.main_inner_circle_palette[1] = 0xff0000
+		self.main_inner_circle_palette.make_transparent(0)
+
+		self.circle_gp.append(
+			empty_circle(
+					15, 
+					120, 
+					120, 
+					self.circle_palette, 
+					self.main_inner_circle_palette)
+		)
 		
 
-	def draw(self):
+		
+
+	def draw(self, accels):
+		if accels[0]**2 + accels[1]**2 < 0.5:
+			self.main_inner_circle_palette[1] = 0x00ff00
+		else:
+			self.main_inner_circle_palette[1] = 0xff0000
+
+		self.circle_gp[-1][0].x = 120+int(10*accels[0])
+		self.circle_gp[-1][0].y = 120+int(10*accels[1])
+		self.circle_gp[-1][1].x = 120+int(10*accels[0])
+		self.circle_gp[-1][1].y = 120+int(10*accels[1])
 		self._output.show(self.circle_gp)
