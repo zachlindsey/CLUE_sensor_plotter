@@ -4,6 +4,7 @@ import time
 import gc
 
 from plotter import Plotter
+from games import CenterGame
 
 from adafruit_clue import clue
 
@@ -15,6 +16,7 @@ import displayio
 initial_title = "Welcome to\nCLUE Plotter"
 
 plotter = Plotter(board.DISPLAY)
+center_game = CenterGame(board.DISPLAY)
 
 state = 0
 
@@ -55,6 +57,9 @@ sources = [
     Source("touch_0", lambda: clue.touch_0, True)
 ]
 num_screens = len(sources)
+
+while True:
+    center_game.draw()
 
 last_source = ''
 while True:
