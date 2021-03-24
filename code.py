@@ -1,4 +1,4 @@
-# import board
+import board
 
 # import gc
 
@@ -14,6 +14,7 @@ from adafruit_ble.services import Service
 # from adafruit_display_text.label import Label
 # import terminalio
 import time
+from draw import Drawer
 # import displayio
 
 ble = BLERadio()
@@ -41,11 +42,16 @@ class CustomUART(Service):
 
 service = CustomUART()
 ad = ProvideServicesAdvertisement(service)
+drawer = Drawer(output = board.DISPLAY)
 
 
 while True:
     if ble.connected:
-        print('connected!' + service.read(1).decode('utf-8'))
+        hexcode = service.read(6).decode('utf-8')
+        print('connected!' + hexcode)
+
+        drawer.draw(hexcode)
+
 
     else:
         print('not connected...')

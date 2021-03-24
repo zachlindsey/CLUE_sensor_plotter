@@ -25,14 +25,25 @@ async def scan_for_devices():
                 print("{0} ({1})".format(mf, value))
 
 ADDRESS = "C5:DF:52:61:6F:19"
+# 
 async def run(address):
     client = BleakClient(address)
     try:
         await client.connect()
         print("Connceted!")
         rx_char = client.services.get_characteristic("8ba86974-935c-447c-91ad-bdcbad575f31")
-        for i in range(0,10):
-            await client.write_gatt_char(rx_char, str(i).encode('utf-8'))
+
+        while True:
+            color = input("input color hex:")
+            if len(color) != 6:
+                print('invalid hex length')
+                continue
+            try:
+                hexcode = int(color, 16)
+                await client.write_gatt_char(rx_char, color.encode('utf-8'))
+
+            except ValueError:
+                print("invalid hex string")
             time.sleep(1)
 
     except Exception as e:
