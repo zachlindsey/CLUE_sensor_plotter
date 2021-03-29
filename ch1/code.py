@@ -79,6 +79,7 @@ group.append(polygon)
 dx = 7
 dy = 3
 
+
 display.show(group)
 while True:
 	circle.x += dx
