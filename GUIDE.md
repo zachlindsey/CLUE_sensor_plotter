@@ -262,3 +262,8 @@ while True:
 ```
 
 One solution is to make the images have even less color: 4 bits per pixel, or 16 colors. The quality is quite low, but we can load multiple images into memory at once, and flipping back and forth between them is quite speedy! Try it with the `doge_4bit` files.
+
+# Chapter 3 - Inputs
+
+
+
