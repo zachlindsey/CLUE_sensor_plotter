@@ -9,6 +9,10 @@ import time
 
 display = clue.display
 
+#
+#	loading two images into memory
+#
+
 bmp, palette = adafruit_imageload.load("doge_4bit.bmp")
 tg = displayio.TileGrid(bmp, pixel_shader = palette)
 gp = displayio.Group()
@@ -74,9 +78,10 @@ while True:
 	display.refresh()
 
 
-while True:
-	pass
 
+#
+#	code not talked about in the guide, but I started trying to read the headers from the biamp files! No thanks!
+#
 
 bmp = displayio.Bitmap(240, 240, 256)
 
@@ -109,12 +114,15 @@ while True:
 	pass
 
 
-tg = displayio.TileGrid(bitmap = bmp, pixel_shader =None )
-
+#
+#	create a bitmap by loaading into memory
+#
 
 bmp = displayio.Bitmap(120, 120, 2)
 
-
+palette = displayio.Palette(2)
+palette[0] = (255,0,0)
+palette[1] = (255,255,255)
 
 for i in range(120):
 	for j in range(120):
